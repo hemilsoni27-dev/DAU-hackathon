@@ -1,0 +1,30 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: gridtrade
+      POSTGRES_USER: gridtrade
+      POSTGRES_PASSWORD: gridtrade
+    ports:
+      - "5432:5432"
+    volumes:
+      - gridtrade-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gridtrade -d gridtrade"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - gridtrade-redis:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+volumes:
+  gridtrade-postgres:
+  gridtrade-redis:

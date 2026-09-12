@@ -1,0 +1,1 @@
+- [GridTrade foundation decisions](gridtrade-foundation.md) — Drizzle runtime schema plus aligned Prisma contract; Clerk boundary with explicit demo session until configured.

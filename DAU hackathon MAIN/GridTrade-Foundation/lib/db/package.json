@@ -1,0 +1,23 @@
+{
+  "name": "@workspace/db",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "generate": "prisma generate --schema=../../prisma/schema.prisma",
+    "migrate:dev": "prisma migrate dev --schema=../../prisma/schema.prisma",
+    "migrate:deploy": "prisma migrate deploy --schema=../../prisma/schema.prisma",
+    "seed": "tsx ../../prisma/seed.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^6.4.0"
+  },
+  "devDependencies": {
+    "@types/node": "catalog:",
+    "prisma": "^6.4.0",
+    "tsx": "^4.19.2"
+  }
+}

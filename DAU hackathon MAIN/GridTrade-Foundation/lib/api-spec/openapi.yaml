@@ -1,0 +1,1223 @@
+openapi: 3.1.0
+info:
+  # Do not change the title, if the title changes, the import paths will be broken
+  title: Api
+  version: 0.1.0
+  description: GridTrade renewable-energy intelligence and P2P coordination API
+servers:
+  - url: /api
+    description: Base API path
+tags:
+  - name: health
+  - name: dashboard
+  - name: solar
+  - name: marketplace
+  - name: grid
+  - name: matching
+  - name: activity
+paths:
+  /healthz:
+    get:
+      operationId: healthCheck
+      tags: [health]
+      summary: Health check
+      responses:
+        "200":
+          description: Healthy
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthStatus"
+
+  /v1/dashboard/summary:
+    get:
+      operationId: getDashboardSummary
+      tags: [dashboard]
+      summary: Get the current GridTrade operating picture
+      responses:
+        "200":
+          description: Dashboard summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DashboardSummary"
+
+  /v1/activity:
+    get:
+      operationId: getActivityFeed
+      tags: [activity]
+      summary: Get recent persisted platform activity
+      parameters:
+        - $ref: "#/components/parameters/Limit"
+      responses:
+        "200":
+          description: Activity feed
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityEvent"
+
+  /v1/solar-systems:
+    get:
+      operationId: listSolarSystems
+      tags: [solar]
+      summary: List the current user's solar systems
+      responses:
+        "200":
+          description: Solar systems
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SolarSystem"
+    post:
+      operationId: createSolarSystem
+      tags: [solar]
+      summary: Register a solar system
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SolarSystemInput"
+      responses:
+        "201":
+          description: Created solar system
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SolarSystem"
+
+  /v1/energy-data:
+    get:
+      operationId: getEnergyOverview
+      tags: [solar]
+      summary: Get generation and consumption observations
+      parameters:
+        - $ref: "#/components/parameters/Window"
+      responses:
+        "200":
+          description: Energy overview
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/EnergyObservation"
+
+  /v1/listings:
+    get:
+      operationId: listListings
+      tags: [marketplace]
+      summary: Browse active renewable-energy listings
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/ListingStatus"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Marketplace listings
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Listing"
+    post:
+      operationId: createListing
+      tags: [marketplace]
+      summary: Publish surplus energy to the marketplace
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ListingInput"
+      responses:
+        "201":
+          description: Created listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /v1/demands:
+    get:
+      operationId: listDemands
+      tags: [marketplace]
+      summary: List consumer energy demands
+      parameters:
+        - name: status
+          in: query
+          schema:
+            $ref: "#/components/schemas/DemandStatus"
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+      responses:
+        "200":
+          description: Energy demands list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Demand"
+    post:
+      operationId: createDemand
+      tags: [marketplace]
+      summary: Create a consumer energy demand order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DemandInput"
+      responses:
+        "201":
+          description: Created demand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Demand"
+
+  /v1/demands/{id}:
+    get:
+      operationId: getDemand
+      tags: [marketplace]
+      summary: Get demand details by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Demand record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Demand"
+
+  /v1/demands/{id}/cancel:
+    post:
+      operationId: cancelDemand
+      tags: [marketplace]
+      summary: Cancel an open energy demand
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cancelled demand
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Demand"
+
+  /v1/listings/{id}:
+    get:
+      operationId: getListing
+      tags: [marketplace]
+      summary: Get listing details by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Listing record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /v1/listings/{id}/close:
+    post:
+      operationId: closeListing
+      tags: [marketplace]
+      summary: Close an active listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Closed listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /v1/listings/{id}/cancel:
+    post:
+      operationId: cancelListing
+      tags: [marketplace]
+      summary: Cancel an active listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Cancelled listing
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Listing"
+
+  /v1/pricing/current:
+    get:
+      operationId: getCurrentPricing
+      tags: [pricing]
+      summary: Get live dynamic pricing quote for region
+      responses:
+        "200":
+          description: Dynamic pricing quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingQuote"
+
+  /v1/pricing/quote:
+    post:
+      operationId: getPricingQuote
+      tags: [pricing]
+      summary: Calculate dynamic pricing for hypothetical market inputs
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PricingQuoteInput"
+      responses:
+        "200":
+          description: Calculated pricing quote
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingQuote"
+
+  /v1/grid/status:
+    get:
+      operationId: getGridStatus
+      tags: [grid]
+      summary: Get current local grid decision and conditions
+      responses:
+        "200":
+          description: Grid status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GridStatus"
+
+  /v1/grid/areas:
+    get:
+      operationId: listGridAreas
+      tags: [grid]
+      summary: List local feeder microgrid areas
+      responses:
+        "200":
+          description: Grid areas list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/GridArea"
+
+  /v1/matching/recommendations:
+    get:
+      operationId: getMatchRecommendations
+      tags: [matching]
+      summary: Get ranked market matches
+      responses:
+        "200":
+          description: Match recommendations
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchRecommendation"
+
+  /v1/matching/recommend:
+    post:
+      operationId: recommendMatches
+      tags: [matching]
+      summary: Get real intelligent matching recommendations for a consumer demand
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecommendMatchesInput"
+      responses:
+        "200":
+          description: Ranked match recommendations with detailed factor scores
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MatchRecommendation"
+
+  /v1/matching/trade-preview:
+    post:
+      operationId: getTradePreview
+      tags: [matching]
+      summary: Generate pre-execution trade preview details
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TradePreviewInput"
+      responses:
+        "200":
+          description: Detailed trade preview calculation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradePreview"
+
+  /v1/trades:
+    get:
+      operationId: listTrades
+      tags: [trades]
+      summary: List user trade execution history
+      responses:
+        "200":
+          description: List of trades
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TradeResult"
+    post:
+      operationId: executeTrade
+      tags: [trades]
+      summary: Execute atomic trade against listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateTradeInput"
+      responses:
+        "201":
+          description: Trade executed successfully
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeResult"
+
+  /v1/trades/{id}:
+    get:
+      operationId: getTradeById
+      tags: [trades]
+      summary: Get trade details by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Trade details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TradeResult"
+
+  /v1/transactions:
+    get:
+      operationId: listTransactions
+      tags: [transactions]
+      summary: List user transactions
+      responses:
+        "200":
+          description: List of transactions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/TransactionRecord"
+
+  /v1/transactions/ledger/verify:
+    get:
+      operationId: verifyLedger
+      tags: [transactions]
+      summary: Audit whole ledger chain integrity
+      responses:
+        "200":
+          description: Ledger verification status
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WholeLedgerVerificationResult"
+
+  /v1/transactions/{id}:
+    get:
+      operationId: getTransactionById
+      tags: [transactions]
+      summary: Get transaction details by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Transaction details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionRecord"
+
+  /v1/transactions/{id}/verify:
+    get:
+      operationId: verifyTransaction
+      tags: [transactions]
+      summary: Perform live SHA-256 tamper verification on transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Verification result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionVerificationResult"
+
+  /v1/transactions/{id}/payment:
+    get:
+      operationId: getPaymentForTransaction
+      tags: [payments]
+      summary: Get payment details for transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Payment record
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRecord"
+    post:
+      operationId: createPaymentForTransaction
+      tags: [payments]
+      summary: Create idempotent payment request for transaction
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreatePaymentInput"
+      responses:
+        "201":
+          description: Payment record created or retrieved idempotently
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentRecord"
+
+  /v1/payments/webhook/{provider}:
+    post:
+      operationId: handlePaymentWebhook
+      tags: [payments]
+      summary: Idempotent payment webhook ingestion
+      parameters:
+        - name: provider
+          in: path
+          required: true
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WebhookInput"
+      responses:
+        "200":
+          description: Webhook ingestion result
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebhookResult"
+
+  /v1/auth/session:
+    get:
+      operationId: getAuthSession
+      tags: [dashboard]
+      summary: Get the current authenticated session boundary
+      responses:
+        "200":
+          description: Session state
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthSession"
+
+  /v1/ai/health:
+    get:
+      operationId: getAiHealth
+      tags: [ai]
+      summary: Check health and availability status of Python FastAPI AI service
+      responses:
+        "200":
+          description: AI Service status
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status: { type: string }
+
+  /v1/ai/predictions:
+    get:
+      operationId: listPredictions
+      tags: [ai]
+      summary: List persistent AI predictions with model versioning and stale indicators
+      parameters:
+        - name: type
+          in: query
+          schema: { type: string }
+        - name: limit
+          in: query
+          schema: { type: integer, default: 20 }
+      responses:
+        "200":
+          description: List of predictions
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AiPredictionRecord"
+
+  /v1/recommendations/smart-sell:
+    get:
+      operationId: getSmartSellRecommendations
+      tags: [ai]
+      summary: Get Smart Sell recommendations with explanations and grid safety rules
+      responses:
+        "200":
+          description: Smart Sell recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartRecommendationRecord"
+
+  /v1/recommendations/smart-buy:
+    get:
+      operationId: getSmartBuyRecommendations
+      tags: [ai]
+      summary: Get Smart Buy recommendations matching active renewable listings
+      responses:
+        "200":
+          description: Smart Buy recommendation
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SmartRecommendationRecord"
+
+  /v1/ai/anomalies:
+    get:
+      operationId: listAnomalies
+      tags: [ai]
+      summary: List open or reviewed metric and trading anomalies for admin queue
+      parameters:
+        - name: status
+          in: query
+          schema: { type: string }
+        - name: severity
+          in: query
+          schema: { type: string }
+      responses:
+        "200":
+          description: List of anomalies
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/AnomalyRecord"
+
+  /v1/assistant/chat:
+    post:
+      operationId: chatAssistant
+      tags: [ai]
+      summary: Chat with AI Energy Assistant for explainable grid and trade insights
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AssistantChatInput"
+      responses:
+        "200":
+          description: Assistant response
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AssistantChatResponse"
+
+components:
+  parameters:
+    Limit:
+      name: limit
+      in: query
+      schema:
+        type: integer
+        minimum: 1
+        maximum: 50
+        default: 10
+    Window:
+      name: window
+      in: query
+      schema:
+        type: string
+        enum: [24h, 7d, 30d]
+        default: 7d
+  schemas:
+    HealthStatus:
+      type: object
+      required: [status, service, timestamp]
+      properties:
+        status:
+          type: string
+          enum: [ok, degraded]
+        service:
+          type: string
+        timestamp:
+          type: string
+          format: date-time
+
+    DashboardSummary:
+      type: object
+      required: [marketableSurplusKwh, activeListings, activeProsumers, currentPriceInrPerKwh, gridDecision, gridLabel, carbonAvoidedKg, energyTrend]
+      properties:
+        marketableSurplusKwh: { type: number }
+        activeListings: { type: integer }
+        activeProsumers: { type: integer }
+        currentPriceInrPerKwh: { type: number }
+        gridDecision:
+          $ref: "#/components/schemas/GridDecision"
+        gridLabel: { type: string }
+        carbonAvoidedKg: { type: number }
+        energyTrend:
+          type: array
+          items:
+            $ref: "#/components/schemas/EnergyObservation"
+
+    ActivityEvent:
+      type: object
+      required: [id, type, title, detail, occurredAt, status]
+      properties:
+        id: { type: string }
+        type:
+          type: string
+          enum: [listing, match, grid, transaction, prediction, alert]
+        title: { type: string }
+        detail: { type: string }
+        occurredAt: { type: string, format: date-time }
+        status:
+          type: string
+          enum: [positive, neutral, warning]
+
+    SolarSystem:
+      type: object
+      required: [id, name, capacityKw, location, status, todayGenerationKwh, todayConsumptionKwh]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        capacityKw: { type: number }
+        location: { type: string }
+        status:
+          type: string
+          enum: [online, standby, offline]
+        todayGenerationKwh: { type: number }
+        todayConsumptionKwh: { type: number }
+    SolarSystemInput:
+      type: object
+      required: [name, capacityKw, location]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 120 }
+        capacityKw: { type: number, exclusiveMinimum: 0 }
+        location: { type: string, minLength: 1, maxLength: 180 }
+
+    EnergyObservation:
+      type: object
+      required: [timestamp, generationKwh, consumptionKwh, marketableSurplusKwh]
+      properties:
+        timestamp: { type: string, format: date-time }
+        generationKwh: { type: number }
+        consumptionKwh: { type: number }
+        marketableSurplusKwh: { type: number }
+
+    Listing:
+      type: object
+      required: [id, sellerName, location, quantityKwh, priceInrPerKwh, status, availableFrom, availableUntil, matchScore, gridDecision]
+      properties:
+        id: { type: string, format: uuid }
+        sellerId: { type: string, format: uuid }
+        sellerName: { type: string }
+        location: { type: string }
+        quantityKwh: { type: number }
+        allocatedKwh: { type: number }
+        priceInrPerKwh: { type: number }
+        energyType: { type: string }
+        status:
+          $ref: "#/components/schemas/ListingStatus"
+        availableFrom: { type: string, format: date-time }
+        availableUntil: { type: string, format: date-time }
+        matchScore: { type: number, minimum: 0, maximum: 100 }
+        gridDecision:
+          $ref: "#/components/schemas/GridDecision"
+    ListingInput:
+      type: object
+      required: [solarSystemId, quantityKwh, priceInrPerKwh, availableFrom, availableUntil]
+      properties:
+        solarSystemId: { type: string, format: uuid }
+        quantityKwh: { type: number, exclusiveMinimum: 0 }
+        priceInrPerKwh: { type: number, exclusiveMinimum: 0 }
+        energyType: { type: string }
+        availableFrom: { type: string, format: date-time }
+        availableUntil: { type: string, format: date-time }
+    ListingStatus:
+      type: string
+      enum: [ACTIVE, PARTIALLY_MATCHED, FULLY_MATCHED, CLOSED, CANCELLED, EXPIRED]
+
+    Demand:
+      type: object
+      required: [id, consumerId, consumerName, quantityKwh, maxPriceInrPerKwh, status, requiredFrom, requiredUntil]
+      properties:
+        id: { type: string, format: uuid }
+        consumerId: { type: string, format: uuid }
+        consumerName: { type: string }
+        quantityKwh: { type: number }
+        allocatedKwh: { type: number }
+        maxPriceInrPerKwh: { type: number }
+        preferredSource: { type: string }
+        status:
+          $ref: "#/components/schemas/DemandStatus"
+        requiredFrom: { type: string, format: date-time }
+        requiredUntil: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+    DemandInput:
+      type: object
+      required: [quantityKwh, maxPriceInrPerKwh, requiredFrom, requiredUntil]
+      properties:
+        quantityKwh: { type: number, exclusiveMinimum: 0 }
+        maxPriceInrPerKwh: { type: number, exclusiveMinimum: 0 }
+        preferredSource: { type: string }
+        requiredFrom: { type: string, format: date-time }
+        requiredUntil: { type: string, format: date-time }
+    DemandStatus:
+      type: string
+      enum: [OPEN, PARTIALLY_MATCHED, FULLY_MATCHED, CLOSED, CANCELLED, EXPIRED]
+
+    RecommendMatchesInput:
+      type: object
+      required: [demandId]
+      properties:
+        demandId: { type: string, format: uuid }
+        limit: { type: integer, default: 5 }
+
+    TradePreviewInput:
+      type: object
+      required: [listingId, requestedKwh]
+      properties:
+        demandId: { type: string, format: uuid }
+        listingId: { type: string, format: uuid }
+        requestedKwh: { type: number, exclusiveMinimum: 0 }
+
+    GridDecision:
+      type: string
+      enum: [APPROVED, ADJUSTED, RESTRICTED]
+    GridStatus:
+      type: object
+      required: [decision, label, congestionPercent, renewableSharePercent, frequencyHz, updatedAt]
+      properties:
+        decision:
+          $ref: "#/components/schemas/GridDecision"
+        label: { type: string }
+        congestionPercent: { type: number }
+        renewableSharePercent: { type: number }
+        frequencyHz: { type: number }
+        updatedAt: { type: string, format: date-time }
+
+    MatchReason:
+      type: object
+      required: [code, description, impact]
+      properties:
+        code: { type: string }
+        description: { type: string }
+        impact: { type: string, enum: [positive, neutral, negative] }
+
+    MatchScoreBreakdown:
+      type: object
+      required: [priceScore, availabilityScore, quantityFitScore, proximityScore, reliabilityScore, gridSuitabilityScore]
+      properties:
+        priceScore: { type: number }
+        availabilityScore: { type: number }
+        quantityFitScore: { type: number }
+        proximityScore: { type: number }
+        reliabilityScore: { type: number }
+        gridSuitabilityScore: { type: number }
+
+    MatchRecommendation:
+      type: object
+      required: [id, listingId, sellerName, location, quantityKwh, priceInrPerKwh, score, rationale, factors]
+      properties:
+        id: { type: string }
+        listingId: { type: string, format: uuid }
+        demandId: { type: string, format: uuid }
+        sellerName: { type: string }
+        location: { type: string }
+        quantityKwh: { type: number }
+        priceInrPerKwh: { type: number }
+        score: { type: number, minimum: 0, maximum: 100 }
+        rationale: { type: string }
+        factors:
+          type: array
+          items: { type: string }
+        reasons:
+          type: array
+          items:
+            $ref: "#/components/schemas/MatchReason"
+        breakdown:
+          $ref: "#/components/schemas/MatchScoreBreakdown"
+
+    TradePreview:
+      type: object
+      required: [listingId, sellerName, energyKwh, unitPriceInr, totalCostInr, estimatedLossesPercent, gridFeeInr, netCostInr, estimatedCarbonSavingsKg, transmissionFeasible]
+      properties:
+        listingId: { type: string, format: uuid }
+        demandId: { type: string, format: uuid }
+        sellerName: { type: string }
+        energyKwh: { type: number }
+        unitPriceInr: { type: number }
+        totalCostInr: { type: number }
+        estimatedLossesPercent: { type: number }
+        gridFeeInr: { type: number }
+        netCostInr: { type: number }
+        estimatedCarbonSavingsKg: { type: number }
+        transmissionFeasible: { type: boolean }
+        warnings:
+          type: array
+          items: { type: string }
+
+    AuthSession:
+      type: object
+      required: [authenticated, role, displayName]
+      properties:
+        authenticated: { type: boolean }
+        role:
+          type: string
+          enum: [PROSUMER, CONSUMER, UTILITY, REGULATOR, ADMIN]
+        displayName: { type: string }
+
+    GridArea:
+      type: object
+      required: [id, name, status, congestionPercent]
+      properties:
+        id: { type: string }
+        name: { type: string }
+        status:
+          $ref: "#/components/schemas/GridDecision"
+        congestionPercent: { type: number }
+
+    PriceFactorExplanation:
+      type: object
+      required: [key, direction, impactPercent, explanation]
+      properties:
+        key:
+          type: string
+          enum: [BASE_PRICE, SUPPLY, DEMAND, CONGESTION, MARKET_CONDITION]
+        direction:
+          type: string
+          enum: [UP, DOWN, NEUTRAL]
+        impactPercent: { type: number }
+        explanation: { type: string }
+
+    PricingExplanation:
+      type: object
+      required: [factors, summary]
+      properties:
+        factors:
+          type: array
+          items:
+            $ref: "#/components/schemas/PriceFactorExplanation"
+        summary: { type: string }
+
+    PricingQuote:
+      type: object
+      required: [recommendedPricePerKwh, basePricePerKwh, supplyDemandFactor, congestionFactor, priceFloor, priceCeiling, explanation, version]
+      properties:
+        recommendedPricePerKwh: { type: number }
+        basePricePerKwh: { type: number }
+        supplyDemandFactor: { type: number }
+        congestionFactor: { type: number }
+        priceFloor: { type: number }
+        priceCeiling: { type: number }
+        explanation:
+          $ref: "#/components/schemas/PricingExplanation"
+        version: { type: string }
+
+    PricingQuoteInput:
+      type: object
+      required: [supplyKwh, demandKwh, congestionLevel]
+      properties:
+        basePricePerKwh: { type: number }
+        supplyKwh: { type: number }
+        demandKwh: { type: number }
+        congestionLevel: { type: number }
+
+    CreateTradeInput:
+      type: object
+      required: [listingId, requestedKwh]
+      properties:
+        listingId: { type: string, format: uuid }
+        demandId: { type: string, format: uuid }
+        requestedKwh: { type: number, exclusiveMinimum: 0 }
+        energyAmountKwh: { type: number, exclusiveMinimum: 0 }
+
+    TradeResult:
+      type: object
+      required: [id, listingId, buyerId, sellerName, quantityKwh, agreedPriceInrPerKwh, gridDecision, netAmountInr, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        listingId: { type: string, format: uuid }
+        demandId: { type: string, format: uuid }
+        buyerId: { type: string, format: uuid }
+        sellerName: { type: string }
+        buyerName: { type: string }
+        quantityKwh: { type: number }
+        agreedPriceInrPerKwh: { type: number }
+        gridDecision:
+          $ref: "#/components/schemas/GridDecision"
+        netAmountInr: { type: number }
+        transactionId: { type: string, format: uuid }
+        ledgerHash: { type: string }
+        status: { type: string }
+        createdAt: { type: string, format: date-time }
+
+    PaymentStatus:
+      type: string
+      enum: [PENDING, PROCESSING, PAID, FAILED, CANCELLED, REFUNDED]
+
+    PaymentRecord:
+      type: object
+      required: [id, transactionId, provider, amountInr, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        transactionId: { type: string, format: uuid }
+        provider: { type: string }
+        providerReference: { type: string }
+        paymentMethod: { type: string }
+        amountInr: { type: number }
+        status:
+          $ref: "#/components/schemas/PaymentStatus"
+        paidAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    CreatePaymentInput:
+      type: object
+      properties:
+        idempotencyKey: { type: string }
+        paymentMethod: { type: string }
+
+    TransactionRecord:
+      type: object
+      required: [id, tradeId, buyerName, sellerName, amountInr, quantityKwh, agreedPriceInrPerKwh, status, paymentStatus, blockIndex, settledAt, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        tradeId: { type: string, format: uuid }
+        buyerName: { type: string }
+        sellerName: { type: string }
+        amountInr: { type: number }
+        quantityKwh: { type: number }
+        agreedPriceInrPerKwh: { type: number }
+        status: { type: string }
+        paymentStatus:
+          $ref: "#/components/schemas/PaymentStatus"
+        blockIndex: { type: integer }
+        hash: { type: string }
+        previousHash: { type: string }
+        settledAt: { type: string, format: date-time }
+        createdAt: { type: string, format: date-time }
+
+    TransactionVerificationResult:
+      type: object
+      required: [transactionId, verified, result, checkedAt]
+      properties:
+        transactionId: { type: string, format: uuid }
+        verified: { type: boolean }
+        result:
+          type: string
+          enum: [VALID, INVALID_HASH, INVALID_CHAIN, MISSING_HASH_RECORD, MALFORMED_RECORD]
+        blockIndex: { type: integer }
+        hash: { type: string }
+        previousHash: { type: string }
+        expectedHash: { type: string }
+        explanation: { type: string }
+        checkedAt: { type: string, format: date-time }
+
+    WholeLedgerVerificationResult:
+      type: object
+      required: [verified, totalBlocks, verifiedBlocks, checkedAt]
+      properties:
+        verified: { type: boolean }
+        totalBlocks: { type: integer }
+        verifiedBlocks: { type: integer }
+        firstInvalidBlock: { type: integer }
+        failureReason: { type: string }
+        checkedAt: { type: string, format: date-time }
+
+    WebhookInput:
+      type: object
+      properties:
+        eventId: { type: string }
+        paymentId: { type: string }
+        status: { type: string }
+
+    WebhookResult:
+      type: object
+      required: [status, webhookLogId]
+      properties:
+        status: { type: string }
+        webhookLogId: { type: string, format: uuid }
+
+    AiPredictionRecord:
+      type: object
+      required: [id, predictionType, horizon, payload, modelVersion, isStale, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        predictionType: { type: string }
+        horizon: { type: string }
+        payload: { type: object }
+        confidence: { type: number, nullable: true }
+        modelVersion: { type: string }
+        staleAt: { type: string, format: date-time, nullable: true }
+        isStale: { type: boolean }
+        createdAt: { type: string, format: date-time }
+
+    SmartRecommendationRecord:
+      type: object
+      required: [kind, score, suggestedQuantityKwh, suggestedPriceInrPerKwh, expectedValueInr, reasons, gridStatus, predictionMetadata]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [SMART_SELL, SMART_BUY] }
+        score: { type: number }
+        listingId: { type: string, format: uuid }
+        demandId: { type: string, format: uuid }
+        suggestedQuantityKwh: { type: number }
+        suggestedPriceInrPerKwh: { type: number }
+        expectedValueInr: { type: number }
+        reasons:
+          type: array
+          items: { type: string }
+        gridStatus: { type: string }
+        predictionMetadata: { type: object }
+
+    AnomalyRecord:
+      type: object
+      required: [id, entityType, score, severity, reasons, modelVersion, status, createdAt]
+      properties:
+        id: { type: string, format: uuid }
+        userId: { type: string, format: uuid, nullable: true }
+        entityType: { type: string }
+        entityId: { type: string, nullable: true }
+        score: { type: number }
+        severity: { type: string }
+        reasons:
+          type: array
+          items: { type: string }
+        modelVersion: { type: string }
+        status: { type: string, enum: [OPEN, REVIEWING, RESOLVED, DISMISSED] }
+        reviewedBy: { type: string, format: uuid, nullable: true }
+        reviewedAt: { type: string, format: date-time, nullable: true }
+        createdAt: { type: string, format: date-time }
+
+    AssistantChatInput:
+      type: object
+      required: [message]
+      properties:
+        message: { type: string }
+        conversationId: { type: string }
+
+    AssistantChatResponse:
+      type: object
+      required: [answer, sources, confidence, generatedAt]
+      properties:
+        answer: { type: string }
+        sources:
+          type: array
+          items: { type: string }
+        confidence: { type: number }
+        generatedAt: { type: string, format: date-time }
+        conversationId: { type: string }
+        suggestedActions:
+          type: array
+          items:
+            type: object
+            properties:
+              label: { type: string }
+              action: { type: string }
+              targetUrl: { type: string }

@@ -1,0 +1,30 @@
+{
+  "name": "workspace",
+  "version": "0.0.0",
+  "license": "MIT",
+  "scripts": {
+    "preinstall": "node -e \"if (process.env.npm_config_user_agent && !process.env.npm_config_user_agent.startsWith('pnpm')) { console.error('Use pnpm instead'); process.exit(1); }\"",
+    "build": "pnpm run typecheck && pnpm -r --if-present run build",
+    "test": "vitest run",
+    "typecheck:libs": "tsc --build",
+    "typecheck": "pnpm run typecheck:libs && pnpm -r --filter \"./artifacts/**\" --filter \"./scripts\" --if-present run typecheck",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate": "prisma migrate dev",
+    "db:seed": "tsx prisma/seed.ts",
+    "demo:reset": "node scripts/demo-reset.mjs"
+  },
+  "private": true,
+  "dependencies": {
+    "@prisma/client": "^6.4.0",
+    "@replit/connectors-sdk": "^0.4.3",
+    "ioredis": "^5.4.2"
+  },
+  "devDependencies": {
+    "@types/ioredis": "^5.0.0",
+    "prisma": "^6.4.0",
+    "prettier": "^3.9.6",
+    "tsx": "^4.19.2",
+    "typescript": "~5.9.3",
+    "vitest": "^5.0.0"
+  }
+}

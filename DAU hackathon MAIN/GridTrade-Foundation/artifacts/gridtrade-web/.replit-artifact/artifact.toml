@@ -1,0 +1,28 @@
+kind = "web"
+previewPath = "/"
+title = "GridTrade"
+description = "A renewable-energy intelligence and peer-to-peer coordination platform for prosumers, consumers, utilities, and regulators."
+version = "1.0.0"
+id = "artifacts/gridtrade-web"
+router = "path"
+
+[[services]]
+name = "web"
+paths = [ "/" ]
+localPort = 18786
+
+[services.development]
+run = "pnpm --filter @workspace/gridtrade-web run dev"
+
+[services.production]
+build = [ "pnpm", "--filter", "@workspace/gridtrade-web", "run", "build" ]
+serve = "static"
+publicDir = "artifacts/gridtrade-web/dist/public"
+
+[[services.production.rewrites]]
+from = "/*"
+to = "/index.html"
+
+[services.env]
+PORT = "18786"
+BASE_PATH = "/"

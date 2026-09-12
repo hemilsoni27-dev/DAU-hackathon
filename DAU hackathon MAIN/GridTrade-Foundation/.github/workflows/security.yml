@@ -1,0 +1,90 @@
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 2 * * 1"  # Weekly Monday 02:00 UTC
+  workflow_dispatch:
+
+jobs:
+  secret-scan:
+    name: Secret Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for secret scanning
+
+      - name: Check .env not committed
+        run: |
+          if git ls-files | grep -E "^\.env$"; then
+            echo "ERROR: .env file is tracked by git"
+            exit 1
+          fi
+          echo "OK: .env is not committed"
+
+      - name: Scan for common secret patterns
+        run: |
+          FOUND=0
+          # Check for obvious hardcoded secrets (not in .env.example which uses placeholders)
+          if git grep -I --exclude="*.md" --exclude=".env.example" \
+            -E "(password|secret|token|api_key)\s*=\s*['\"][^'\"]{8,}" \
+            -- ':!node_modules' ':!pnpm-lock.yaml' ':!*.test.*'; then
+            echo "WARNING: Potential hardcoded secrets found — review above"
+            FOUND=1
+          fi
+          # Detect JWT secrets accidentally inlined
+          if git grep -I -E "JWT_SECRET\s*=\s*[a-zA-Z0-9+/]{20,}" \
+            -- ':!node_modules' ':!.env.example'; then
+            echo "ERROR: JWT_SECRET value committed to repository"
+            FOUND=1
+          fi
+          if [ $FOUND -eq 1 ]; then
+            echo "Secret scan found potential issues. Review the output above."
+            exit 1
+          fi
+          echo "Secret scan: no obvious hardcoded secrets found"
+
+  dependency-audit:
+    name: Dependency Vulnerability Audit
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Audit Node.js dependencies
+        run: |
+          pnpm audit --audit-level=critical || true
+          # Report high severity but don't block — review exceptions manually
+          pnpm audit --audit-level=high --json > audit-report.json || true
+          echo "Audit report saved to audit-report.json"
+
+      - name: Audit Python dependencies (AI service)
+        run: |
+          pip install pip-audit 2>/dev/null || true
+          if command -v pip-audit &> /dev/null && [ -f apps/ai/requirements.txt ]; then
+            pip-audit -r apps/ai/requirements.txt --format json > python-audit.json || true
+            echo "Python audit report saved to python-audit.json"
+          fi
+
+      - name: Upload audit reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: security-audit-reports
+          path: |
+            audit-report.json
+            python-audit.json
+          retention-days: 30

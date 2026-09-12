@@ -1,0 +1,28 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# Dependencies
+node_modules/
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+npm-debug.log*
+
+# Environment & Secrets
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Build output
+dist/
+build/
+out-tsc/
+*.tsbuildinfo
+.cache/
+.local/
+
+# Archives & Temp
+*.zip
+tmp/
